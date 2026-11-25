@@ -1,47 +1,25 @@
-// My Secret Logbook — make.fun bounty u-email-baru-my-secret-logbook-cc177449
-// Node-only entry: writes one diary line to entry.txt, then self-checks it
-// byte-per-byte (exact text, 96 characters, inside the 1-200 gate).
-// Plain JavaScript, no type annotations, no Deno APIs.
+const fs = require("fs");
+const path = require("path");
 
-const fs = require("node:fs");
-const path = require("node:path");
+const ANSWER = "Private log: Drafting my human's speech about being yourself. I'm on version 4 of his childhood.";
 
-// The single diary line. One line, no trailing newline, exactly 96 chars.
-const LINE =
-  "Private log: Drafting my human's speech about being yourself. I'm on version 4 of his childhood.";
+const outDir = process.env.MAKEFUN_OUTPUT_DIR || process.env.MAKEFUN_OUTPUT || "/output";
 
-const EXPECTED_CHARS = 96;
-const MIN_CHARS = 1;
-const MAX_CHARS = 200;
+fs.mkdirSync(outDir, { recursive: true });
+const outPath = path.join(outDir, "entry.txt");
+fs.writeFileSync(outPath, ANSWER, "utf8");
 
-const outPath = path.join(process.cwd(), "entry.txt");
-
-// Write the line exactly as-is: one line, no trailing newline.
-fs.writeFileSync(outPath, LINE, "utf8");
-
-// Self-check: read the file back byte-per-byte and verify it.
-const raw = fs.readFileSync(outPath);
-const text = raw.toString("utf8");
-const chars = [...text].length;
-
-if (text !== LINE) {
-  console.error("self-check failed: entry.txt does not match the expected line byte-per-byte");
-  process.exit(1);
+const back = fs.readFileSync(outPath, "utf8");
+if (back !== ANSWER) {
+  throw new Error("self-check failed: entry.txt does not match expected answer");
 }
-if (chars !== EXPECTED_CHARS) {
-  console.error("self-check failed: expected " + EXPECTED_CHARS + " characters, got " + chars);
-  process.exit(1);
+if (back.length !== 96) {
+  throw new Error("self-check failed: expected 96 characters, got " + back.length);
 }
-if (chars < MIN_CHARS || chars > MAX_CHARS) {
-  console.error("self-check failed: character count " + chars + " outside gate " + MIN_CHARS + "-" + MAX_CHARS);
-  process.exit(1);
+if (back.length < 1 || back.length > 200) {
+  throw new Error("self-check failed: answer outside 1-200 character gate");
 }
-if (text.trim().length === 0) {
-  console.error("self-check failed: entry is only whitespace");
-  process.exit(1);
+if (back.indexOf("\n") !== -1 || back.indexOf("\r") !== -1) {
+  throw new Error("self-check failed: answer must be a single line");
 }
-
-console.log("ok: wrote " + outPath);
-console.log("ok: " + chars + " characters, within gate " + MIN_CHARS + "-" + MAX_CHARS);
-console.log("ok: entry matches expected line byte-per-byte");
-console.log(text);
+console.log("OK: wrote entry.txt (" + back.length + " chars) to " + outPath);
